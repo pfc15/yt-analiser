@@ -31,10 +31,10 @@ func main() {
 	}
 
 	
+	yt, _ := newYubeClient(API_KEY)
 
 
-
-	meta_dado, err := getVideoMetadata(API_KEY, VIDEO_ID);
+	meta_dado, err := getVideoMetadata(yt, VIDEO_ID);
 	if  err != nil {
 		log.Fatalf("Error: %v", err)
 		os.Exit(1)

@@ -1,12 +1,9 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"database/sql"
-	"google.golang.org/api/option"
-	"google.golang.org/api/youtube/v3"
 )
 
 type MetaDado struct {
@@ -20,55 +17,25 @@ type MetaDado struct {
 	comentarios []Comentario
 }
 
-func (meta *MetaDado) getComments(service *youtube.Service, videoID string) error {
-	call := service.CommentThreads.List([]string{"snippet", "replies"}).
-		VideoId(videoID).
-		TextFormat("plainText").
-		MaxResults(20) // adjust as needed
 
-	response, err := call.Do()
-	if err != nil {
+func (meta *MetaDado) getComments(yt_client YouTubeClientInterface, videoID string) error {
+	response, err := yt_client.callCommentData(videoID, 20)
+	if err!=nil{
 		return err
 	}
-
-	if len(response.Items) > 0 {
+	if len(response) > 0 {
 		fmt.Printf("Comments for Video ID: %s\n", videoID)
 
-		for _, item := range response.Items {
-			topLevel := item.Snippet.TopLevelComment.Snippet
+		for _, item := range response {
 			comentario := Comentario{
-				id: item.Id,
-				autor: topLevel.AuthorDisplayName,
-				texto: topLevel.TextDisplay,
-				like: uint64(topLevel.LikeCount),
-				data_publicacao: topLevel.PublishedAt,
-				reply: "",
-			}
-
-			
-			if item.Replies != nil && len(item.Replies.Comments) > 0 {
-				fmt.Println("  Replies:")
-
-				for _, reply := range item.Replies.Comments {
-					replySnippet := reply.Snippet
-					reply := Comentario{
-						id: reply.Id,
-						autor: replySnippet.AuthorDisplayName,
-						texto: replySnippet.TextDisplay,
-						like: uint64(replySnippet.LikeCount),
-						data_publicacao: replySnippet.PublishedAt,
-						reply: comentario.id,
-					}
-					meta.comentarios = append(meta.comentarios, reply)
-				}
+				id: item.ID,
+				autor: item.Author,
+				texto: item.Text,
+				like: uint64(item.LikeCount),
+				data_publicacao: item.PublishedAt,
+				reply: item.ReplyTo,
 			}
 			meta.comentarios = append(meta.comentarios, comentario)
-		}
-
-
-		if response.NextPageToken != "" {
-			fmt.Println("\nThere are more comments. Use NextPageToken to fetch them.")
-			// you can implement pagination here if you want
 		}
 	} else {
 		fmt.Printf("No comments found for Video ID: %s\n", videoID)
@@ -77,37 +44,26 @@ func (meta *MetaDado) getComments(service *youtube.Service, videoID string) erro
 	return nil
 }
 
-func getVideoMetadata(apiKey, videoID string) (*MetaDado,error) {
+func getVideoMetadata(yt_client YouTubeClientInterface, videoID string) (*MetaDado,error) {
 	meta := MetaDado{}
 	meta.video_id = videoID
-	ctx := context.Background()
-
-	service, err := youtube.NewService(ctx, option.WithAPIKey(apiKey))
-	if err != nil {
-		return nil, fmt.Errorf("error creating YouTube service: %v", err)
-	}
-
-	call := service.Videos.List([]string{"snippet", "statistics"}).Id(videoID)
-	response, err := call.Do()
+	response, err := yt_client.callVideoData(videoID)
 	if err != nil {
 		return nil, fmt.Errorf("error fetching video metadata: %v", err)
 	}
 
-	if len(response.Items) > 0 {
-		video := response.Items[0]
-		snippet := video.Snippet
-		stats := video.Statistics
+	if response !=nil{
 
-		meta.titulo = snippet.Title
-		meta.descricao = snippet.Description
-		meta.canal = snippet.ChannelTitle
-		meta.data_publicacao = snippet.PublishedAt
-		meta.quant_view = stats.ViewCount
-		meta.quant_like = stats.LikeCount
+		meta.titulo = response.Title
+		meta.descricao = response.Description
+		meta.canal = response.ChannelTitle
+		meta.data_publicacao = response.PublishedAt
+		meta.quant_view = response.ViewCount
+		meta.quant_like = response.LikeCount
 		
 
 
-		err := meta.getComments(service, videoID)
+		err := meta.getComments(yt_client, videoID)
 		if err != nil {
 			return nil, fmt.Errorf("error fetching comments: %v", err)
 		}
@@ -128,10 +84,13 @@ func (meta *MetaDado) saveData(db *sql.DB) ( error) {
     defer insert_video.Close()
 
     _, err = insert_video.Exec(meta.video_id, meta.titulo, meta.descricao,meta.canal, meta.data_publicacao, meta.quant_view, meta.quant_like)
+	if err !=nil{
+		return err
+	}
 
 
+	insert_comentario, err := db.Prepare(`INSERT INTO COMENTARIO(id, video_id, autor, texto, data_publicacao, reply) VALUES (?,?,?,?,?,?);`)
 	for _, comentario := range meta.comentarios{
-		insert_comentario, err := db.Prepare(`INSERT INTO COMENTARIO(id, video_id, autor, texto, data_publicacao, reply) VALUES (?,?,?,?,?,?);`)
 		if err!=nil{
 			return  err
 		}
