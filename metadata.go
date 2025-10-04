@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
+	"database/sql"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -42,7 +42,7 @@ func (meta *MetaDado) getComments(service *youtube.Service, videoID string) erro
 				texto: topLevel.TextDisplay,
 				like: uint64(topLevel.LikeCount),
 				data_publicacao: topLevel.PublishedAt,
-				reply: make([]Comentario, 0),
+				reply: "",
 			}
 
 			
@@ -57,9 +57,9 @@ func (meta *MetaDado) getComments(service *youtube.Service, videoID string) erro
 						texto: replySnippet.TextDisplay,
 						like: uint64(replySnippet.LikeCount),
 						data_publicacao: replySnippet.PublishedAt,
-						reply: make([]Comentario, 0),
+						reply: comentario.id,
 					}
-					comentario.reply = append(comentario.reply, reply)
+					meta.comentarios = append(meta.comentarios, reply)
 				}
 			}
 			meta.comentarios = append(meta.comentarios, comentario)
@@ -118,4 +118,32 @@ func getVideoMetadata(apiKey, videoID string) (*MetaDado,error) {
 		fmt.Printf("Vídeo com ID '%s' não encontrado.\n", videoID)
 		return nil, errors.New("vídeo com ID '%s' não encontrado")
 	}
+}
+
+func (meta *MetaDado) saveData(db *sql.DB) ( error) {
+	insert_video, err := db.Prepare(
+		`INSERT INTO VIDEO (id, titulo, descricao, canal, data_publicacao, quant_view, quant_like) VALUES (?, ?, ?, ?, ?, ?, ?);`)
+
+	if err != nil { return err }
+    defer insert_video.Close()
+
+    _, err = insert_video.Exec(meta.video_id, meta.titulo, meta.descricao,meta.canal, meta.data_publicacao, meta.quant_view, meta.quant_like)
+
+
+	for _, comentario := range meta.comentarios{
+		insert_comentario, err := db.Prepare(`INSERT INTO COMENTARIO(id, video_id, autor, texto, data_publicacao, reply) VALUES (?,?,?,?,?,?);`)
+		if err!=nil{
+			return  err
+		}
+
+		if comentario.reply == ""{
+			_, err = insert_comentario.Exec(comentario.id, meta.video_id, comentario.autor, comentario.texto, comentario.data_publicacao, nil)
+		} else{
+			_, err = insert_comentario.Exec(comentario.id, meta.video_id, comentario.autor, comentario.texto, comentario.data_publicacao, comentario.reply)
+		}
+		if err!=nil{
+			return err
+		}
+	}
+    return nil
 }

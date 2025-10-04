@@ -24,6 +24,7 @@ require (
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.15.0 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect
+	github.com/mattn/go-sqlite3 v1.14.32 // indirect
 	github.com/saintfish/chardet v0.0.0-20230101081208-5e3ef4b5456d // indirect
 	github.com/tebeka/selenium v0.9.9 // indirect
 	github.com/temoto/robotstxt v1.1.2 // indirect

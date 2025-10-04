@@ -1,8 +1,5 @@
 package main
 
-import (
-	
-)
 
 type Comentario struct {
 	id string
@@ -10,6 +7,6 @@ type Comentario struct {
 	texto string
 	like uint64 
 	data_publicacao string
-	reply []Comentario
+	reply string
 }
 
