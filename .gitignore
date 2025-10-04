@@ -1,3 +1,4 @@
 client_secret.json
 secrets.go
 youtube_tracker
+mydb.sqlite3
