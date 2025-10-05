@@ -10,7 +10,7 @@ import (
 
 
 func start_data_base() (*sql.DB){
-	db, err := sql.Open("sqlite3", "mybd.sqlite3")
+	db, err := sql.Open("sqlite3", "mydb.sqlite3")
     if err != nil {
         log.Fatal(err)
     }

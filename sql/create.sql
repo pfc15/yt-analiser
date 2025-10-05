@@ -6,9 +6,17 @@ CREATE TABLE IF NOT EXISTS VIDEO(
     titulo VARCHAR(60), 
     descricao TEXT,
     canal VARCHAR(100),
-    data_publicacao VARCHAR(30),
+    data_publicacao VARCHAR(30)
+);
+
+CREATE TABLE IF NOT EXISTS METRICA(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    video_id VARCHAR(30),
+    data_coleta VARCHAR(30),
     quant_view INTEGER,
-    quant_like INTEGER
+    quant_like INTEGER,
+
+    FOREIGN KEY (video_id) REFERENCES VIDEO(id)
 );
 
 CREATE TABLE IF NOT EXISTS COMENTARIO(

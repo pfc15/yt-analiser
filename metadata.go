@@ -1,9 +1,10 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
-	"database/sql"
+	"time"
 )
 
 type MetaDado struct {
@@ -77,31 +78,50 @@ func getVideoMetadata(yt_client YouTubeClientInterface, videoID string) (*MetaDa
 }
 
 func (meta *MetaDado) saveData(db *sql.DB) ( error) {
-	insert_video, err := db.Prepare(
-		`INSERT INTO VIDEO (id, titulo, descricao, canal, data_publicacao, quant_view, quant_like) VALUES (?, ?, ?, ?, ?, ?, ?);`)
-
-	if err != nil { return err }
-    defer insert_video.Close()
-
-    _, err = insert_video.Exec(meta.video_id, meta.titulo, meta.descricao,meta.canal, meta.data_publicacao, meta.quant_view, meta.quant_like)
-	if err !=nil{
+	var isOnDb bool
+	err := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM VIDEO WHERE VIDEO.id = ?)`, meta.video_id).Scan(&isOnDb)
+	
+	if err != nil {
+		fmt.Println("Query error:", err)
 		return err
 	}
-
+	
+	if !isOnDb {
+		insert_video, err := db.Prepare(
+		`INSERT INTO VIDEO (id, titulo, descricao, canal, data_publicacao) VALUES (?, ?, ?, ?, ?);`)
+		if err !=nil{
+			return err
+		}
+		_, err = insert_video.Exec(meta.video_id, meta.titulo, meta.descricao,meta.canal, meta.data_publicacao)
+		if err !=nil{
+			return err
+		}
+		insert_video.Close()
+	}
+	
+	insert_metrica, err := db.Prepare(`INSERT INTO METRICA(video_id, data_coleta, quant_view, quant_like) VALUES(?,?,?,?)`)
+	if err!=nil{return err}
+	
+	insert_metrica.Exec(meta.video_id, time.Now().Format("SS:MM:HH DD-MM-YYYY"),meta.quant_view, meta.quant_like)
 
 	insert_comentario, err := db.Prepare(`INSERT INTO COMENTARIO(id, video_id, autor, texto, data_publicacao, reply) VALUES (?,?,?,?,?,?);`)
 	for _, comentario := range meta.comentarios{
 		if err!=nil{
 			return  err
 		}
-
-		if comentario.reply == ""{
-			_, err = insert_comentario.Exec(comentario.id, meta.video_id, comentario.autor, comentario.texto, comentario.data_publicacao, nil)
-		} else{
-			_, err = insert_comentario.Exec(comentario.id, meta.video_id, comentario.autor, comentario.texto, comentario.data_publicacao, comentario.reply)
-		}
+		err := db.QueryRow(`SELECT EXISTS(SELECT 1 FROM COMENTARIO WHERE COMENTARIO.id = ?)`, comentario.id).Scan(&isOnDb)
 		if err!=nil{
-			return err
+			return  err
+		}
+		if !isOnDb{
+			if comentario.reply == ""{
+			_, err = insert_comentario.Exec(comentario.id, meta.video_id, comentario.autor, comentario.texto, comentario.data_publicacao, nil)
+			} else{
+				_, err = insert_comentario.Exec(comentario.id, meta.video_id, comentario.autor, comentario.texto, comentario.data_publicacao, comentario.reply)
+			}
+			if err!=nil{
+				return err
+			}
 		}
 	}
     return nil
