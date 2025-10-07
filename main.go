@@ -33,7 +33,14 @@ func main() {
 	http.HandleFunc("/youtube/callback", youtubeCallback)
 	http.HandleFunc("/", ola_mundo)
 
-	go subscribe("UCuAXFkgsw1L7xaCfnd5JJOw") // replace with your channel ID
+	done := make(chan bool)
+
+    go func() {
+        subscribe("UC_x5XG1OV2P6uZZ5FSM9Ttw")
+        done <- true
+    }()
+
+    <-done // wait for subscription to finish // replace with your channel ID
 
     log.Println("Server started on :8002")
     log.Fatal(http.ListenAndServe(":8002", nil))
