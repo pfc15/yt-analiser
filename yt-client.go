@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"context"
 	"fmt"
 	"google.golang.org/api/option"
@@ -101,4 +102,50 @@ func (yt *YouTubeClient) callCommentData(videoID string, maxResult int64) ([]Com
 		}
 	}
 	return comments, nil
+}
+
+func (yt *YouTubeClient) callCanalAllVideoList(canal string) ([]string){
+
+    // 1. Get uploads playlist ID
+    chResp, err := yt.service.Channels.List([]string{"contentDetails"}).
+        Id(canal).
+        Do()
+    if err != nil {
+        log.Fatalf("Channels.List error: %v", err)
+    }
+    if len(chResp.Items) == 0 {
+        log.Fatalf("No channel found with ID %s", canal)
+    }
+    uploadsPlaylistID := chResp.Items[0].ContentDetails.RelatedPlaylists.Uploads
+    fmt.Println("Uploads playlist ID:", uploadsPlaylistID)
+
+    // 2. Iterate through the playlist items (videos)
+    var allVideoIDs []string
+    nextPageToken := ""
+    for {
+        plReq := yt.service.PlaylistItems.List([]string{"snippet", "contentDetails"}).
+            PlaylistId(uploadsPlaylistID).
+            MaxResults(50)
+        if nextPageToken != "" {
+            plReq = plReq.PageToken(nextPageToken)
+        }
+        plResp, err := plReq.Do()
+        if err != nil {
+            log.Fatalf("PlaylistItems.List error: %v", err)
+        }
+
+        for _, item := range plResp.Items {
+            // item.ContentDetails.VideoId is the video ID
+            allVideoIDs = append(allVideoIDs, item.ContentDetails.VideoId)
+            // You can also read snippet (title, publish date etc.)
+            fmt.Printf("Video: %s — %s\n", item.ContentDetails.VideoId, item.Snippet.Title)
+        }
+
+        if plResp.NextPageToken == "" {
+            break
+        }
+        nextPageToken = plResp.NextPageToken
+    }
+
+	return allVideoIDs
 }

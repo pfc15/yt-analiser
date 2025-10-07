@@ -45,6 +45,10 @@ func (meta *MetaDado) getComments(yt_client YouTubeClientInterface, videoID stri
 	return nil
 }
 
+// func getVideoId(yt_client YouTubeClientInterface, canal string) ([]string, error) {
+	
+// }
+
 func getVideoMetadata(yt_client YouTubeClientInterface, videoID string) (*MetaDado,error) {
 	meta := MetaDado{}
 	meta.video_id = videoID

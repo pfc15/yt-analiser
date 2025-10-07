@@ -3,7 +3,6 @@ youtube tracker
 a aplicação preciso de:
 
 - baixar canais
-- scrapper dos principais dados
 - conferir se tem novos vídeos
     - scrapper de cada vídeo
 - comparar entre influencers
