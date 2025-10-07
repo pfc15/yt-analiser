@@ -10,6 +10,7 @@ import (
 )
 
 
+
 func start_data_base() (*sql.DB){
 	db, err := sql.Open("sqlite3", "mydb.sqlite3")
     if err != nil {
@@ -30,6 +31,7 @@ func main() {
 	
 
 	http.HandleFunc("/youtube/callback", youtubeCallback)
+	http.HandleFunc("/", ola_mundo)
 
     go subscribe("UCuAXFkgsw1L7xaCfnd5JJOw") // replace with your channel ID
 

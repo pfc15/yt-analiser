@@ -43,3 +43,8 @@ func youtubeCallback(w http.ResponseWriter, r *http.Request) {
     body, _ := io.ReadAll(r.Body)
     fmt.Println("Got YouTube notification:", string(body))
 }
+
+func ola_mundo(w http.ResponseWriter, r*http.Request){
+    
+    fmt.Fprintln(w, "olá mundo")
+}
