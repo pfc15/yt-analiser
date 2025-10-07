@@ -30,7 +30,6 @@ func start_data_base() (*sql.DB){
 func main() {
 	
 
-	http.HandleFunc("/youtube/callback", youtubeCallback)
 	http.HandleFunc("/", ola_mundo)
 
 	done := make(chan bool)
@@ -41,7 +40,8 @@ func main() {
     }()
 
     <-done // wait for subscription to finish // replace with your channel ID
-
+	
+	http.HandleFunc("/youtube/callback", youtubeCallback)
     log.Println("Server started on :8002")
     log.Fatal(http.ListenAndServe(":8002", nil))
 
