@@ -11,7 +11,7 @@ import (
 
 func subscribe(channelID string) {
     hubURL := "https://pubsubhubbub.appspot.com/subscribe"
-    callback := "https://yt_analiser.pedrofonsecacruz.com.br/youtube/callback"
+    callback := "https://yt_analiser.pedrofcruz.com.br/youtube/callback"
     topic := "https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + channelID
 
     data := url.Values{}
