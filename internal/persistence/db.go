@@ -25,7 +25,3 @@ func Start_data_base() (*sql.DB){
 
 	return db
 }
-func Export_csv(db *sql.DB) (error) {
-	_, err := db.Exec(".output output.csv")
-	return err
-}

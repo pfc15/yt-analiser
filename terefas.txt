@@ -3,4 +3,3 @@ youtube tracker
 a aplicação preciso de:
 
 - comparar entre influencers
-- export para csv

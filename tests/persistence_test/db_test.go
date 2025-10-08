@@ -1,10 +1,10 @@
 package persistence_test
 
 import (
+	"database/sql"
 	"log"
 	"testing"
 	"youtube_tracker/internal/persistence"
-	"database/sql"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -23,10 +23,13 @@ func TestStart_data_base(t *testing.T) {
 	db := persistence.Start_data_base()
 
 	if !check_table(db, "CANAL") || !check_table(db, "VIDEO") || !check_table(db, "METRICA") || !check_table(db, "COMENTARIO") {
+		log.Println("não foi criado todos as tabelas")
 		t.Fail()
 	}
 
 	if check_table(db, "nao tem") {
+		log.Println("tabelas a mais foram criadas")
 		t.Fail()
 	}
 }
+
