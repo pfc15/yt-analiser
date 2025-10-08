@@ -1,4 +1,4 @@
-package main
+package ytclient
 
 import (
 	"log"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
+	
 )
 
 type YouTubeClient struct {
@@ -13,10 +14,15 @@ type YouTubeClient struct {
 	apiKey  string
 }
 
+type CanalMetadata struct{
+	Id string
+	Nome string
+}
+
 type VideoMetadata struct {
 	Title        string
 	Description  string
-	ChannelTitle string
+	Channel_id string
 	PublishedAt  string
 	ViewCount    uint64
 	LikeCount    uint64
@@ -33,11 +39,13 @@ type CommentData struct {
 
 // Update interface to use minimal types
 type YouTubeClientInterface interface {
-	callVideoData(videoID string) (*VideoMetadata, error)
-	callCommentData(videoID string, maxResult int64) ([]CommentData, error)
+	CallVideoData(videoID string) (*VideoMetadata, error)
+	CallCommentData(videoID string, maxResult int64) ([]CommentData, error)
+	CallCanalVideoList(canal string, isPaginating bool) ([]string)
+	CallCanal(canalId string) (*CanalMetadata, error)
 }
 
-func newYubeClient(apikey string) (*YouTubeClient, error) {
+func NewYubeClient(apikey string) (*YouTubeClient, error) {
 	ctx := context.Background()
 	yt_client := &YouTubeClient{apiKey: apikey}
 
@@ -50,7 +58,27 @@ func newYubeClient(apikey string) (*YouTubeClient, error) {
 	return yt_client, nil
 }
 
-func (yt *YouTubeClient) callVideoData(videoID string) (*VideoMetadata, error) {
+func (yt *YouTubeClient) CallCanal(canalId string) (*CanalMetadata, error) {
+	call := yt.service.Channels.List([]string{"snippet"}).Id(canalId)
+	response, err := call.Do()
+
+	if len(response.Items) == 0 {
+		return nil, fmt.Errorf("no match id")
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("error fetching video metadata: %v", err)
+	}
+
+	canal := response.Items[0]
+	return &CanalMetadata{
+		Id: canalId,
+		Nome: canal.Snippet.Title,
+	}, nil
+}
+
+
+func (yt *YouTubeClient) CallVideoData(videoID string) (*VideoMetadata, error) {
 	call := yt.service.Videos.List([]string{"snippet", "statistics"}).Id(videoID)
 	response, err := call.Do()
 	if err != nil || len(response.Items) == 0 {
@@ -60,14 +88,14 @@ func (yt *YouTubeClient) callVideoData(videoID string) (*VideoMetadata, error) {
 	return &VideoMetadata{
 		Title:        video.Snippet.Title,
 		Description:  video.Snippet.Description,
-		ChannelTitle: video.Snippet.ChannelTitle,
+		Channel_id: video.Snippet.ChannelId,
 		PublishedAt:  video.Snippet.PublishedAt,
 		ViewCount:    video.Statistics.ViewCount,
 		LikeCount:    video.Statistics.LikeCount,
 	}, nil
 }
 
-func (yt *YouTubeClient) callCommentData(videoID string, maxResult int64) ([]CommentData, error) {
+func (yt *YouTubeClient) CallCommentData(videoID string, maxResult int64) ([]CommentData, error) {
 	call := yt.service.CommentThreads.List([]string{"snippet", "replies"}).
 		VideoId(videoID).
 		TextFormat("plainText").
@@ -104,7 +132,7 @@ func (yt *YouTubeClient) callCommentData(videoID string, maxResult int64) ([]Com
 	return comments, nil
 }
 
-func (yt *YouTubeClient) callCanalAllVideoList(canal string) ([]string){
+func (yt *YouTubeClient) CallCanalVideoList(canal string, isPaginating bool) ([]string){
 
     // 1. Get uploads playlist ID
     chResp, err := yt.service.Channels.List([]string{"contentDetails"}).
@@ -141,7 +169,7 @@ func (yt *YouTubeClient) callCanalAllVideoList(canal string) ([]string){
             fmt.Printf("Video: %s — %s\n", item.ContentDetails.VideoId, item.Snippet.Title)
         }
 
-        if plResp.NextPageToken == "" {
+        if plResp.NextPageToken == "" || !isPaginating {
             break
         }
         nextPageToken = plResp.NextPageToken

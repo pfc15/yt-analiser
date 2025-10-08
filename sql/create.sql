@@ -1,12 +1,20 @@
 
 
+CREATE TABLE IF NOT EXISTS CANAL(
+    id VARCHAR(50) PRIMARY KEY,
+    nome VARCHAR(100) UNIQUE,
+    isSubscribed INTEGER
+);
+
 
 CREATE TABLE IF NOT EXISTS VIDEO(
     id VARCHAR(30) PRIMARY KEY,
     titulo VARCHAR(60), 
     descricao TEXT,
-    canal VARCHAR(100),
-    data_publicacao VARCHAR(30)
+    canal VARCHAR(50),
+    data_publicacao VARCHAR(30),
+
+    FOREIGN key(canal) REFERENCES CANAL(id)
 );
 
 CREATE TABLE IF NOT EXISTS METRICA(
@@ -28,6 +36,6 @@ CREATE TABLE IF NOT EXISTS COMENTARIO(
     reply VARCHAR(30),
 
     FOREIGN KEY (reply) REFERENCES COMENTARIO(id),
-    FOREIGN KEY (video_id) REFERENCES METADADO(id)
+    FOREIGN KEY (video_id) REFERENCES VIDEO(id)
 );
 
