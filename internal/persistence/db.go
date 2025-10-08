@@ -7,13 +7,15 @@ import (
 	"os"
 )
 
+var ROOT = "/home/pfc15/Documents/aleatorio/youtube_tracker/"
+
 
 func Start_data_base() (*sql.DB){
-	db, err := sql.Open("sqlite3", "/home/pfc15/Documents/aleatorio/youtube_tracker/mydb.sqlite3")
+	db, err := sql.Open("sqlite3", ROOT+"/mydb.sqlite3")
     if err != nil {
         log.Fatal(err)
     }
-	query, err := os.ReadFile("../sql/create.sql")
+	query, err := os.ReadFile(ROOT+"/sql/create.sql")
 	if err != nil {
 		panic(err)
 	}
@@ -22,4 +24,8 @@ func Start_data_base() (*sql.DB){
 	}
 
 	return db
+}
+func Export_csv(db *sql.DB) (error) {
+	_, err := db.Exec(".output output.csv")
+	return err
 }
