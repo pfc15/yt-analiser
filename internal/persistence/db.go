@@ -2,20 +2,20 @@ package persistence
 
 import (
 	_ "github.com/mattn/go-sqlite3"
+	"youtube_tracker/internal/domain"
 	"database/sql"
 	"log"
 	"os"
 )
 
-var ROOT = "/home/pfc15/Documents/aleatorio/youtube_tracker/"
 
 
 func Start_data_base() (*sql.DB){
-	db, err := sql.Open("sqlite3", ROOT+"/mydb.sqlite3")
+	db, err := sql.Open("sqlite3", domain.ROOT+"/mydb.sqlite3")
     if err != nil {
         log.Fatal(err)
     }
-	query, err := os.ReadFile(ROOT+"/sql/create.sql")
+	query, err := os.ReadFile(domain.ROOT+"/sql/create.sql")
 	if err != nil {
 		panic(err)
 	}

@@ -25,7 +25,6 @@ func main() {
 	}
 
 	canal.SaveCanalVideosData(yt, db)
-	persistence.Export_csv(db)
 
 	// yt.callCanalVideoList(channel_id, false)
 	

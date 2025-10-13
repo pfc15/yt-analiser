@@ -37,9 +37,41 @@ func GetChannel(yt ytclient.YouTubeClientInterface, db *sql.DB,id string) (*cana
 	return &c, nil
 }
 
+func GetAllChannels(db *sql.DB, getSubscribed bool) (*[]canal ,error) {
+	var query *sql.Rows
+	var err error
+	
+	if getSubscribed {
+		query, err = db.Query(`SELECT id, nome, isSubscribed FROM CANAL WHERE isSubscribed==1`)
+	} else {
+		query, err = db.Query(`SELECT id, nome, isSubscribed FROM CANAL`)
+	}
+	if err != nil {
+		return nil, err
+	}
+	defer query.Close()
+
+	canais := make([]canal, 0)
+
+	for query.Next() {
+		c := canal{}
+		
+		if err = query.Scan(c.Id,c.Nome, c.IsSubscribed);err!=nil {
+			return &canais, err
+		}
+		c.Videos = make([]string, 0)
+		canais = append(canais, c)
+	}
+	return &canais, nil
+}
+
 func (c *canal) SaveCanalVideosData(yt ytclient.YouTubeClientInterface, db *sql.DB) (error) {
 	if len(c.Videos) == 0 {
-		return fmt.Errorf("channel not subscribed or no videos on channel")
+		if c.IsSubscribed{
+			c.Videos = yt.CallCanalVideoList(c.Id, true)
+		} else {
+		return fmt.Errorf("channel not subscribed")
+		}
 	}
 
 	for _, video_id := range c.Videos {

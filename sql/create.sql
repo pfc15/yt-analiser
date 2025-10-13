@@ -2,6 +2,8 @@
 
 CREATE TABLE IF NOT EXISTS CANAL(
     id VARCHAR(50) PRIMARY KEY,
+    filiacao_politica VARCHAR(30),
+    porte VARCHAR(20),
     nome VARCHAR(100) UNIQUE,
     isSubscribed INTEGER
 );
